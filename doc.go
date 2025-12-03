@@ -1,185 +1,187 @@
 /*
-Package envload provides a lightweight, zero-dependency solution for loading
-environment variables from .env files into Go structs with type-safe parsing.
+Package godotenv provides a lightweight, type-safe environment configuration
+loader for Go applications.
 
 # Overview
 
-envload automatically maps environment variables to struct fields using struct tags,
-with support for default values, required field validation, and comprehensive type conversion.
+godotenv automatically maps environment variables from .env files to Go structs
+using struct tags. It provides type-safe parsing, default values, required field
+validation, and comprehensive type conversion — all with minimal setup.
 
-# Features
+# Installation
 
-• Zero Dependencies - Uses only Go standard library
-• Type-Safe Parsing - Automatic conversion with validation
-• Rich Type Support - Strings, numbers, booleans, durations, slices, maps
-• Struct Tags - Simple configuration via env, default, and required tags
-• Error Handling - Comprehensive validation and helpful error messages
-• Production Ready - Optimized for application startup patterns
+	go get github.com/go-fynx/godotenv
 
-# Basic Usage
+# Quick Start
 
 Create a .env file:
 
-	APP_NAME=MyApp
+	APP_NAME=MyAwesomeApp
 	PORT=8080
 	DEBUG=true
 	TIMEOUT=30s
+	DATABASE_URL=postgres://localhost/mydb
 
-Define your configuration struct:
+Define your configuration struct and load it:
+
+	package main
+
+	import (
+		"log"
+		"time"
+
+		"github.com/go-fynx/godotenv"
+	)
 
 	type Config struct {
-		AppName string        `env:"APP_NAME" default:"DefaultApp"`
-		Port    int           `env:"PORT" default:"3000"`
-		Debug   bool          `env:"DEBUG" default:"false"`
-		Timeout time.Duration `env:"TIMEOUT" default:"10s"`
+		AppName     string        `env:"APP_NAME" default:"DefaultApp"`
+		Port        int           `env:"PORT" default:"3000"`
+		Debug       bool          `env:"DEBUG" default:"false"`
+		Timeout     time.Duration `env:"TIMEOUT" default:"10s"`
+		DatabaseURL string        `env:"DATABASE_URL" required:"true"`
 	}
 
-Load the configuration:
+	func main() {
+		var cfg Config
 
-	var config Config
-	err := envload.LoadAndParse(".env", &config)
-	if err != nil {
-		log.Fatal("Failed to load config:", err)
+		if err := godotenv.LoadAndParse(".env", &cfg); err != nil {
+			log.Fatal("Failed to load config:", err)
+		}
+
+		log.Printf("App: %s running on port %d", cfg.AppName, cfg.Port)
 	}
 
 # Struct Tags
 
-env - Maps struct field to environment variable name
+The following struct tags are supported:
 
-	Field string `env:"ENV_VAR_NAME"`
+	env      - Maps field to environment variable name
+	         Example: `env:"PORT"`
 
-default - Provides fallback value when environment variable is missing
+	default  - Fallback value when env var is missing
+	         Example: `default:"8080"`
 
-	Port int `env:"PORT" default:"8080"`
+	required - Fails if missing and no default
+	         Example: `required:"true"`
 
-required - Marks field as mandatory (fails if missing and no default)
+Example usage:
 
-	APIKey string `env:"API_KEY" required:"true"`
+	type Config struct {
+		// Required field - fails if DATABASE_URL is missing
+		DatabaseURL string `env:"DATABASE_URL" required:"true"`
 
-# Supported Data Types
+		// Optional with default - uses 8080 if PORT is missing
+		Port int `env:"PORT" default:"8080"`
+
+		// Optional without default - empty string if missing
+		LogPath string `env:"LOG_PATH"`
+
+		// Required with default - never fails (default satisfies requirement)
+		AppName string `env:"APP_NAME" required:"true" default:"MyApp"`
+	}
+
+# Supported Types
 
 Basic Types:
-• Strings: string
-• Integers: int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64
-• Floats: float32, float64
-• Booleans: bool (accepts true/false, 1/0, yes/no, on/off)
-• Durations: time.Duration (e.g., "30s", "5m", "1h")
+  - string
+  - int, int8, int16, int32, int64
+  - uint, uint8, uint16, uint32, uint64
+  - float32, float64
+  - bool (accepts: true, false, 1, 0)
+  - time.Duration (e.g., "5s", "2m", "1h30m")
 
-Collection Types:
-• Slices: []string, []int, []float64, []bool (comma-separated values)
-• Maps: map[string]T (comma-separated key:value pairs, string keys only)
-
-# Examples
-
-String and basic types:
+Slices (comma-separated values):
 
 	type Config struct {
-		AppName     string        `env:"APP_NAME" default:"MyApp"`
-		Port        int           `env:"PORT" default:"8080"`
-		EnableSSL   bool          `env:"ENABLE_SSL" default:"true"`
-		Timeout     time.Duration `env:"TIMEOUT" default:"30s"`
+		Tags    []string  `env:"TAGS" default:"web,api"`
+		Ports   []int     `env:"PORTS" default:"8080,9090"`
+		Enabled []bool    `env:"ENABLED"`
 	}
 
-Slices (comma-separated values, empty values automatically filtered):
-
-	type Config struct {
-		Tags    []string  `env:"TAGS" default:"web,api,service"`
-		Ports   []int     `env:"PORTS" default:"8080,9090,3000"`
-		Enabled []bool    `env:"ENABLED" default:"true,false,true"`
-	}
-	# Environment: TAGS=frontend,,backend,mobile
-	# Result: ["frontend", "backend", "mobile"] (empty value skipped)
+Empty values in slices are automatically filtered.
+For example, TAGS=web,,api results in ["web", "api"].
 
 Maps (comma-separated key:value pairs):
 
 	type Config struct {
-		Labels   map[string]string `env:"LABELS" default:"env:prod,team:backend"`
-		Features map[string]bool   `env:"FEATURES" default:"cache:true,debug:false"`
-		Limits   map[string]int    `env:"LIMITS" default:"cpu:80,memory:512"`
+		Labels   map[string]string `env:"LABELS"`
+		Features map[string]bool   `env:"FEATURES"`
+		Limits   map[string]int    `env:"LIMITS"`
 	}
 
-Required fields:
+# Production Pattern
 
-	type Config struct {
-		DatabaseURL string `env:"DATABASE_URL" required:"true"`
-		APIKey      string `env:"API_KEY" required:"true"`
-
-		# This works - has default even though required
-		AppName     string `env:"APP_NAME" required:"true" default:"MyApp"`
-	}
-
-# Complete Example
+Use the singleton pattern for application-wide configuration:
 
 	package config
 
 	import (
-		"bitbucket.org/bookingkoala/genes/envload"
 		"sync"
 		"time"
+
+		"github.com/go-fynx/godotenv"
 	)
 
 	type Config struct {
-		# Application settings
-		AppName string `env:"APP_NAME" default:"MyApp"`
-		Port    int    `env:"PORT" default:"8080"`
-		Debug   bool   `env:"DEBUG" default:"false"`
-
-		# Database settings
-		DatabaseURL string        `env:"DATABASE_URL" required:"true"`
-		DBTimeout   time.Duration `env:"DB_TIMEOUT" default:"30s"`
-
-		# Feature configuration
-		Features   map[string]bool `env:"FEATURES"`
-		Tags       []string        `env:"TAGS" default:"web,api"`
-
-		# Optional settings
-		RedisHosts []string `env:"REDIS_HOSTS" default:"localhost:6379"`
+		AppName     string            `env:"APP_NAME" default:"MyApp"`
+		Port        int               `env:"PORT" default:"8080"`
+		Debug       bool              `env:"DEBUG" default:"false"`
+		DatabaseURL string            `env:"DATABASE_URL" required:"true"`
+		DBTimeout   time.Duration     `env:"DB_TIMEOUT" default:"30s"`
+		RedisHosts  []string          `env:"REDIS_HOSTS" default:"localhost:6379"`
+		Features    map[string]bool   `env:"FEATURES"`
 	}
 
 	var (
 		instance Config
 		once     sync.Once
+		loadErr  error
 	)
 
-	func Load() error {
-		var err error
+	// Load initializes configuration (call once at startup)
+	func Load(envPath string) error {
 		once.Do(func() {
-			err = envload.LoadAndParse(".env", &instance)
+			loadErr = godotenv.LoadAndParse(envPath, &instance)
 		})
-		return err
+		return loadErr
 	}
 
+	// Get returns the loaded configuration
 	func Get() Config {
 		return instance
 	}
 
+Usage:
+
+	func main() {
+		if err := config.Load(".env"); err != nil {
+			log.Fatal("Config error:", err)
+		}
+
+		cfg := config.Get()
+		log.Printf("Starting %s on port %d", cfg.AppName, cfg.Port)
+	}
+
 # Error Handling
 
-LoadAndParse returns descriptive errors for various failure cases:
+godotenv provides descriptive errors for common issues:
 
-• Missing required fields: "required field 'APIKey' (env: API_KEY) is missing and has no default value"
-• Invalid type conversion: "invalid int for field 'Port': strconv.ParseInt: parsing \"abc\": invalid syntax"
-• Invalid target: "target must be a pointer to struct"
+  - Missing required field: "missing required field: field=DatabaseURL env=DATABASE_URL"
+  - Invalid type conversion: "invalid int for field 'Port': strconv.ParseInt: parsing \"abc\": invalid syntax"
+  - Invalid target: "target must be a pointer to struct"
+  - Invalid duration: "invalid duration for field 'Timeout': time.ParseDuration: invalid duration \"xyz\""
 
-If the .env file doesn't exist, envload logs a warning and continues with default values,
-allowing for graceful degradation.
-
-# Performance
-
-envload is optimized for typical application startup patterns where configuration
-is loaded once during initialization. Memory usage is minimal (~2-10KB per load)
-and reflection overhead is negligible for typical configuration structs.
-
-For production applications, use the sync.Once pattern to load configuration
-once and reuse throughout the application lifecycle.
+If the .env file doesn't exist, godotenv logs a warning and continues
+with default values only (graceful degradation).
 
 # Limitations
 
-• Nested structs are not supported - use flat structures
-• Pointer fields are not supported - use value types
-• Map keys must be strings
-• Slice elements must be basic types (string, int, float, bool)
+  - Nested structs are not supported — use flat structures
+  - Pointer fields are not supported — use value types
+  - Map keys must be strings
+  - Slice elements must be basic types (string, int, float, bool)
 
-For detailed documentation and examples, see the README.md file.
+For more details and examples, see the README.md file at:
+https://github.com/go-fynx/godotenv
 */
-package envload
+package godotenv
