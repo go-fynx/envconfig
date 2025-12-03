@@ -1,4 +1,4 @@
-module godotenv
+module github.com/go-fynx/godotenv
 
 go 1.25.4
 
