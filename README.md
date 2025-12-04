@@ -1,13 +1,13 @@
-# godotenv
+# envload
 
 <div align="center">
 
-![godotenv](env.png)
+![envload](env.png)
 
 **A lightweight, type-safe environment configuration loader for Go**
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/go-fynx/godotenv.svg)](https://pkg.go.dev/github.com/go-fynx/godotenv)
-[![Go Report Card](https://goreportcard.com/badge/github.com/go-fynx/godotenv)](https://goreportcard.com/report/github.com/go-fynx/godotenv)
+[![Go Reference](https://pkg.go.dev/badge/github.com/go-fynx/envload.svg)](https://pkg.go.dev/github.com/go-fynx/envload)
+[![Go Report Card](https://goreportcard.com/badge/github.com/go-fynx/envload)](https://goreportcard.com/report/github.com/go-fynx/envload)
 
 </div>
 
@@ -15,7 +15,7 @@
 
 ## Overview
 
-**godotenv** automatically maps environment variables from `.env` files to Go structs using struct tags. It provides type-safe parsing, default values, required field validation, and comprehensive type conversion — all with minimal setup.
+**envload** automatically maps environment variables from `.env` files to Go structs using struct tags. It provides type-safe parsing, default values, required field validation, and comprehensive type conversion — all with minimal setup.
 
 ```go
 type Config struct {
@@ -46,7 +46,7 @@ envload.LoadAndParse(".env", &cfg)
 ## Installation
 
 ```bash
-go get github.com/go-fynx/godotenv
+go get github.com/go-fynx/envload
 ```
 
 ---
@@ -72,7 +72,7 @@ import (
     "log"
     "time"
 
-    "github.com/go-fynx/godotenv"
+    "github.com/go-fynx/envload"
 )
 
 type Config struct {
@@ -186,7 +186,7 @@ package config
 import (
     "sync"
 
-    "github.com/go-fynx/godotenv"
+    "github.com/go-fynx/envload"
 )
 
 type Config struct {
@@ -236,7 +236,7 @@ func main() {
 
 ## Error Handling
 
-**godotenv** provides descriptive errors for common issues:
+**envload** provides descriptive errors for common issues:
 
 | Scenario | Error Message |
 |----------|---------------|
@@ -245,7 +245,7 @@ func main() {
 | Invalid target | `target must be a pointer to struct` |
 | Invalid duration | `invalid duration for field 'Timeout': time.ParseDuration: invalid duration "xyz"` |
 
-**Graceful degradation:** If the `.env` file doesn't exist, godotenv logs a warning and continues with default values only.
+**Graceful degradation:** If the `.env` file doesn't exist, envload logs a warning and continues with default values only.
 
 ---
 

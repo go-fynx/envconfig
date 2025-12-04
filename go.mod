@@ -1,4 +1,4 @@
-module github.com/go-fynx/godotenv
+module github.com/go-fynx/envload
 
 go 1.25.4
 

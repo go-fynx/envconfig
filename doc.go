@@ -1,16 +1,16 @@
 /*
-Package godotenv provides a lightweight, type-safe environment configuration
+Package envload provides a lightweight, type-safe environment configuration
 loader for Go applications.
 
 # Overview
 
-godotenv automatically maps environment variables from .env files to Go structs
+envload automatically maps environment variables from .env files to Go structs
 using struct tags. It provides type-safe parsing, default values, required field
 validation, and comprehensive type conversion — all with minimal setup.
 
 # Installation
 
-	go get github.com/go-fynx/godotenv
+	go get github.com/go-fynx/envload
 
 # Quick Start
 
@@ -30,7 +30,7 @@ Define your configuration struct and load it:
 		"log"
 		"time"
 
-		"github.com/go-fynx/godotenv"
+		"github.com/go-fynx/envload"
 	)
 
 	type Config struct {
@@ -44,7 +44,7 @@ Define your configuration struct and load it:
 	func main() {
 		var cfg Config
 
-		if err := godotenv.LoadAndParse(".env", &cfg); err != nil {
+		if err := envload.LoadAndParse(".env", &cfg); err != nil {
 			log.Fatal("Failed to load config:", err)
 		}
 
@@ -119,7 +119,7 @@ Use the singleton pattern for application-wide configuration:
 		"sync"
 		"time"
 
-		"github.com/go-fynx/godotenv"
+		"github.com/go-fynx/envload"
 	)
 
 	type Config struct {
@@ -141,7 +141,7 @@ Use the singleton pattern for application-wide configuration:
 	// Load initializes configuration (call once at startup)
 	func Load(envPath string) error {
 		once.Do(func() {
-			loadErr = godotenv.LoadAndParse(envPath, &instance)
+			loadErr = envload.LoadAndParse(envPath, &instance)
 		})
 		return loadErr
 	}
@@ -164,14 +164,14 @@ Usage:
 
 # Error Handling
 
-godotenv provides descriptive errors for common issues:
+envload provides descriptive errors for common issues:
 
   - Missing required field: "missing required field: field=DatabaseURL env=DATABASE_URL"
   - Invalid type conversion: "invalid int for field 'Port': strconv.ParseInt: parsing \"abc\": invalid syntax"
   - Invalid target: "target must be a pointer to struct"
   - Invalid duration: "invalid duration for field 'Timeout': time.ParseDuration: invalid duration \"xyz\""
 
-If the .env file doesn't exist, godotenv logs a warning and continues
+If the .env file doesn't exist, envload logs a warning and continues
 with default values only (graceful degradation).
 
 # Limitations
@@ -182,6 +182,6 @@ with default values only (graceful degradation).
   - Slice elements must be basic types (string, int, float, bool)
 
 For more details and examples, see the README.md file at:
-https://github.com/go-fynx/godotenv
+https://github.com/go-fynx/envload
 */
-package godotenv
+package envload
